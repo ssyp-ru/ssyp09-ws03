@@ -1,0 +1,71 @@
+-- проверка: запуск произведен через главный файл main.wlua или нет
+if not did_we_load_the_main_file then
+	print("Извините, но вы должны запускать только MAIN.WLUA")
+	os.exit(0)
+end
+----------------------- Прародитель всех живых существ-----------------------
+predok = {typ = "предок", -- Главный класс, из которого создаем потомков
+		x = 1, -- у каждого живого объекта есть координаты
+		y = 1,
+		--num = 0,
+		name = "без имени", -- здесть можно хранить уникальное имя. Нужно для определения кто был МАМА ПАПА
+		zhiv = true, -- жив ли объект
+		vozrast = 0, -- текущий возраст объекта в циклах
+		max_vozrast = 40, -- максимально возможный возраст объекта (в циклах)
+		ed_pitaniya = 0, -- сколько нужно единиц корма для 100% сытости
+		kaloriinost = 0, -- сколько калорий в 100% живом объекте (для расчета его как КОРМА или УДОБРЕНИЯ)
+		sitost = 0, --
+		razl = false, --
+		chto_est = 'ничего',
+		cikl_razmn = 0, -- в циклах. Через сколько циклов принести потомство
+		d_razmn = 0, -- осталось ДО дня размножения
+		deti = 0, -- сколько должно родиться детей (или семян)
+		zrenie = 0, -- сколько клеточек от объекта видимо для поиска
+		vr_razl = 2, -- Разложение. процесс. убрать отсюда!
+		statys = 'Мёртв', --
+		-- Статусы: Мёртв, Прогулка, Хочу есть, Готов к размножению, Хочу спать, Разложение
+		dom_x = 0, -- координаты его дома (гнезда. Должен возвращаться туда когда сыт или для размножения)
+		dom_y = 0,
+		parent_name = 'Аз есм первый',
+	}
+
+-- Видит ли наш объект О
+function predok:vizhu_object(o)
+	if self.zrenie <= math.sqrt( (self.x - o.x)*(self.x - o.x)+(self.y - o.y)*(self.y - o.y) ) then
+		return (true, a)
+	end
+	return false
+end
+
+function predok:umiraet_or_not()
+	if (self.vozrast >= self.max_vozrast) then
+		self:umri()
+		return
+	end
+end
+function predok:getinfo()
+	iup.Message(self.name..' - информация','Статус: '..self.statys..
+				'\nКоординаты: '..self.x..','..self.y..
+				'\nВозраст - '..self.vozrast..
+				'\nСытость - '..self.sitost..
+				'\nЕст '..self.chto_est..
+				'\nРазмножается каждые '..self.cikl_razmn..' циклов'..
+				'\nРадиус зрения - '..self.zrenie
+				)
+end
+
+function range()
+	math.sqrt( (self.x - o.x)*(self.x - o.x)+(self.y - o.y)*(self.y - o.y) )
+	return
+end
+
+for i = 1,5 do
+	m[i].r = range(x,y,m[i].x,m[i].y)
+end
+
+for i = 1,5 do
+	if m[i].r < min then
+		min = m[i].r
+	end
+end
+-----------------------/Прародитель всех живых существ-----------------------

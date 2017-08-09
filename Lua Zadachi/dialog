@@ -1,0 +1,22 @@
+--"Код к сейфу" версия 0.2
+--03.07.09
+
+require('iuplua')
+require('iupluacontrols')
+
+dlg = iup.dialog
+{
+  iup.hbox
+  {
+    iup.button{title="Button Very Long Text"},
+    iup.button{title="short"},
+    iup.button{title="Mid Button"}
+  }
+  ;title="IupDialog", font="Helvetica, Bold 14"
+}
+dlg:show()
+
+
+if (not iup.MainLoopLevel or iup.MainLoopLevel()==0) then
+  iup.MainLoop()
+end

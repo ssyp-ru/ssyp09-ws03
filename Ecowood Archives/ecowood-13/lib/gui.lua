@@ -1,0 +1,200 @@
+-- проверка: запуск произведен через главный файл main.wlua или нет
+if not did_we_load_the_main_file then
+	print("Извините, но вы должны запускать только MAIN.WLUA")
+	os.exit(0)
+end
+-------------------GUI-------------------
+--- Версия 1.02
+function refill() -- отрисовать кол-во гумуса в матрице
+	if mode == 0 then
+		for i = 1, g_h do
+			for j = 1, g_w do
+				grid:setcell(i,j,gumus[i][j])
+			end
+		end
+	end
+end
+
+function gumus_r() -- начальное насыщение поля гумусом
+	gumus = {}
+	for i = 1, g_h do
+		gumus[i] = {}
+	end
+	for i = 1, g_h do
+		for j = 1, g_w do
+			gumus[i][j] = math.random(2,7) --Создаём гумус
+			if mode == 0 then grid:setcell(i,j,gumus[i][j]) end
+		end
+	end
+	if mode == 0 then grid.resizematrix = "YES" end
+end
+
+function new() -- Начать новое наблюдение
+	iup.SetAttribute(list, 1, nil)
+	log1.value = ''
+	st.title = ''
+	--math.randomseed(os.time()) -- для инициализации датчика случайных чисел
+	--math.random() -- тоже
+	clean_logs()
+	trava = {}
+	life = {}
+	tmp_obj = {}
+	day = 1
+	st_alive = 0
+	st_dead = 0
+	gumus_r()
+	o_sornyachok_n = 0
+	o_romashka_n = 0
+	o_cherv_n = 0
+	o_d_cherv_n = 0
+	o_odyvanchik_n = 0
+	o_datel_n = 0
+
+	for i=1,3 do
+		o_odyvanchik:create(math.random(1,g_h),math.random(1,g_w))
+		o_romashka:create(math.random(1,g_h),math.random(1,g_w))
+		o_sornyachok:create(math.random(1,g_h),math.random(1,g_w))
+
+
+	end
+	for i = 1,5 do
+		o_zaic:create(math.random(1,g_h),math.random(1,g_w),math.random(32,223),math.random(32,223),math.random(32,223))
+	end
+
+	for i=1,11 do
+		o_cherv:create(10,10,math.random(32,223),math.random(32,223),math.random(32,223))
+		o_d_cherv:create(math.random(1,g_h),math.random(1,g_w),math.random(32,223),math.random(32,223),math.random(32,223))
+	end
+	for i=1,2 do
+		o_datel:create(math.random(1,g_h),math.random(1,g_w),math.random(32,223),math.random(32,223),math.random(32,223))
+	end
+end
+
+function cycle() -- Промоделировать 1 цикл жизни всех объектов
+	if day == nil then
+		new()
+	end
+	printlog('\n\n------------\nЦикл '..day..'\n------------\n')
+	refill()
+	for i = 1, table.maxn(life) do
+		life[i]:zhivi()
+	end
+	if mode == 0 then grid.redraw = 'ALL' end
+	day = day + 1
+	statistics()
+	if mode == 1 then cnv:action() end
+	return
+end
+
+function cycle10() -- 10 циклов промоделировать
+	clean_logs()
+	if day == nil then
+		new()
+	else
+		for i = 1, 10 do
+			cycle()
+		end
+	end
+end
+
+function exit() -- Выход в Виндовз
+	os.exit(0)
+	return
+end
+
+function logging(text) -- запись логов в лог1
+	log1.value = log1.value..text
+	-- если больше 10 Кб логов, то очистим автоматом
+	if string.len(log1.value) > 1000 then
+		clean_logs()
+	end
+	return
+end
+
+function statistics() -- статистика в отд-м окошке
+	st.title ='Цикл: '..day-1 ..'\nЖивых: '..st_alive..'\nМертвых: '..st_dead..'\n\n'
+end
+
+function clean_logs() -- очистить логи
+	log1.value = ''
+	return
+end
+
+function log_export()
+	f_sv = iup.filedlg{dialogtype = 'SAVE', title = 'Сохранить файл',
+						filter = "*.txt", filterinfo = "Текстовые документы(*.txt)"}
+	f_sv:popup (iup.ANYWHERE, iup.ANYWHERE)
+	if f_sv.status ~= '-1' then
+		h_filesv = io.open(f_sv.value, "w")
+		h_filesv:write(log1.value)
+		h_filesv:close()
+	end
+end
+
+-- определили размер матрицы на экране
+grid = iup.matrix {numcol=g_w, numlin=g_h, numcol_visible=g_w, numlin_visible=g_h, widthdef=30, border='no'}
+
+-- создание диалогового окна, кнопок и холста
+function startup()
+
+	if mode == 0 then
+		grid = iup.matrix {numcol=g_w, numlin=g_h, numcol_visible=g_w, numlin_visible=g_h, widthdef=40, border='no'}
+		for i = 1,g_w  do
+			grid:setcell(0,i,i)
+		end
+		for i = 1,g_h  do
+			grid:setcell(i,0,i)
+		end
+	end
+	log1 = iup.multiline{value=''; SIZE='300x100'}
+	st = iup.label{title=''; SIZE='100x30',bgcolor = "255 255 0",alignment = "ACENTER" }
+	list = iup.list{dropdown="NO"; SIZE = '100x350'}
+	function list:action(t,i,v)
+		if v ~= 0 then
+		for l = 1, table.maxn(life) do
+			if life[l].name == t then
+				life[l]:getinfo()
+			end
+		end
+		end
+	end
+	if mode == 0 then
+		mode_ = grid
+	else
+		mode_ = cnv
+	end
+	tgui = iup.dialog
+	{
+		iup.hbox
+		{
+			iup.vbox
+			{
+				iup.hbox
+				{
+					iup.button{title='Нов. наблюдение'; size='85x15', action=new},
+					iup.button{title='След. цикл'; SIZE='60x15', action=cycle},
+					iup.button{title='10 циклов'; SIZE='50x15', action=cycle10},
+					iup.button{title='Очистить лог'; size='70x15', action=clean_logs},
+					iup.button{title='Экспорт лога...'; size='75x15', action=log_export},
+					iup.button{title='Выход'; SIZE='50x15', action=exit},
+				},
+				mode_,
+				iup.hbox
+				{
+					log1,
+					st
+				}
+			},
+			list
+		}
+		;title='Эколес (GUI)'--,size = "640x400", expand='HORIZONTAL'
+	}
+	tgui:show()
+end
+
+startup()
+--Эти 3 строчки нужно запускать, чтобы приложение WLUA с открытым диалогом не закрылось, а ждало команд
+if (not iup.MainLoopLevel or iup.MainLoopLevel()==0) then
+  iup.MainLoop()
+end
+------------------/GUI-------------------

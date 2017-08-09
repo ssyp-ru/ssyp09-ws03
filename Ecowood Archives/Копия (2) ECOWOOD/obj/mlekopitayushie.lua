@@ -1,0 +1,319 @@
+-- проверка: запуск произведен через главный файл main.wlua или нет
+if not did_we_load_the_main_file then
+	print("Извините, но вы должны запускать только MAIN.WLUA")
+	os.exit(0)
+end
+-------------------Функции млекопитающих-------------------
+o_mlekopit = deepcopy(predok)
+o_mlekopit.name = "Млекопитающее"
+o_mlekopit.typ = "млекопитающее"
+o_mlekopit.ed_pitaniya = 1
+o_mlekopit.max_vozrast = 120
+o_mlekopit.cikl_pitaniya = 20
+o_mlekopit.sitost = 70
+o_mlekopit.cikl_razmn = 20
+o_mlekopit.d_razmn = o_chervi.cikl_razmn
+o_mlekopit.deti = 2 -- родится 2 ребенка
+o_mlekopit.othodi = 1
+o_mlekopit.cikl_videl = 6 -- через сколько циклов выделяет ГУМУС в почву
+o_mlekopit.d_videl = o_chervi.cikl_videl -- сколько до следующего цикла выделения ГУМУСА
+o_mlekopit.zaderzhka_v_go = 1 -- сколько ждет циклов до следующего шага
+o_mlekopit.d_go = o_mlekopit.zaderzhka_v_go
+o_mlekopit.statys = 'Прогулка'
+o_mlekopit.razmnvoz = false -- чтобы размножались 1 раз.
+o_mlekopit.edagertva = nil
+
+function o_mlekopit:eda()
+	if (self.sitost < 50) and (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+		for i = 1, table.maxn(life) do
+			if (life[i].typ == self.chto_est) and (life[i].x==self.x) and (life[i].y==self.y) then
+				printlog('Сегодня день питания.\n')
+				life[i]:umri(true) -- параметр ТРУ = обнулим потом калории у жертвы
+				self.sitost = 100
+				self.edagertva = nil
+				self.statys = 'Прогулка'
+				return
+			end
+		end
+	end
+	grid.redraw = 'ALL'
+end
+
+function o_mlekopit:poisk_edi()
+	--local x1 = nil
+	--local y1 = nil
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+		if (self.edagertva == nil) then
+--			iup.Message('root',"(self.edagertva == nil)")
+			for i = 1, table.maxn(life) do
+				if (life[i].typ == self.chto_est) and (life[i] ~= self) and math.random(100)<50
+					and (life[i].statys ~= 'Мертв') and (life[i].statys ~= 'Разложился') then
+					self.edagertva = life[i]
+					--x1 = life[i].x
+					--y1 = life[i].y
+					--iup.Message('root','1; self.edagertva = '..self.edagertva.name)
+					return --x1,y1
+				end
+			end
+		else
+--			iup.Message('root','2; self.edagertva = '..self.edagertva.name)
+			return
+		end
+	end
+	return
+end
+
+function o_mlekopit:poisk_pari()
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился')
+		and (self.para == nil)
+		and (not self.razmnvoz)
+		and (self.vozrast > self.max_vozrast/2) then
+		for i = 1, table.maxn(life) do
+			if (life[i] ~= self) and (life[i].vid == self.vid)
+				and (life[i].para == nil) and (life[i].statys ~= 'Мертв')
+				and (life[i].statys ~= 'Разложился')
+				and (not life[i].razmnvoz) then
+				self.para = life[i]
+				self.para.para = self
+				self.statys = 'Поиск пары'
+				--x1 = self.para.x
+				--y1 = self.para.y
+				--self:go_to_obj(life[i].x,life[i].y)
+				return
+			end
+		end
+		if self.para == nil then
+			--self.statys = 'Прогулка'
+			return
+		end
+	end
+end
+
+--[[function o_mlekopit:razmn()
+	if (self.deti > 0) and (self.para~=nil) and (self.razmnvoz == false) then
+		--self.statys = 'Размножение'
+		for i = 1, table.maxn(life) do
+			if (life[i].vid==self.vid) and (life[i].name~=self.name) and (life[i].x==self.x) and (life[i].y==self.y) then
+				printlog('Сегодня день размножения.\n')
+				for j = 1, self.deti do
+					local x = math.random(self.x-1,self.x+1)
+					if x<1 then x = 1 end
+					if x>g_h then x = g_h end
+					local y = math.random(self.y-1,self.y+1)
+					if y<1 then y = 1 end
+					if y>g_w then y = g_w end
+					c1 = (self.c1 + life[i].c1)/2 + math.random(-8, 8)
+					c2 = (self.c2 + life[i].c2)/2 + math.random(-8, 8)
+					c3 = (self.c3 + life[i].c3)/2 + math.random(-8, 8)
+					self:create(x,y,c1,c2,c3)
+				end
+				printlog('Воспроизвёл потомков: '..self.deti..'\n')
+--				self.d_razmn = self.cikl_razmn
+				self.razmnvoz = true
+				self.para.razmnvoz = true
+				return
+			end
+		end
+	end
+end]]
+function o_mlekopit:razmn()
+	if self.deti > 0 and self.para~=nil
+		and self.razmnvoz == false
+		and self.para.x == self.x and self.para.y == self.y then
+		printlog('Сегодня день размножения.\n')
+		for j = 1, self.deti do
+			local x = math.random(self.x-1,self.x+1)
+			if x<1 then x = 1 end
+			if x>g_h then x = g_h end
+			local y = math.random(self.y-1,self.y+1)
+			if y<1 then y = 1 end
+			if y>g_w then y = g_w end
+			local c1 = (self.c1 + self.para.c1)/2 + math.random(-8, 8)
+			local c2 = (self.c2 + self.para.c2)/2 + math.random(-8, 8)
+			local c3 = (self.c3 + self.para.c3)/2 + math.random(-8, 8)
+			if c1<1 then c1 = 1 end
+			if c2<1 then c2 = 1 end
+			if c3<1 then c3 = 1 end
+			if c1>255 then c1 = 255 end
+			if c2>255 then c2 = 255 end
+			if c3>255 then c3 = 255 end
+			self:create(x,y,c1,c2,c3)
+		end
+		printlog('Воспроизвёл потомков: '..self.deti..'\n')
+		self.razmnvoz = true
+		self.para.razmnvoz = true
+		return
+	end
+end
+
+-- изменение параметров по окончании цикла
+function o_mlekopit:param()
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+		self.vozrast = self.vozrast + 1
+		self.sitost = self.sitost - 2
+		--[[if self.d_razmn > 0 then
+			self.d_razmn = self.d_razmn - 1
+		end]]
+	end
+end
+
+function o_mlekopit:umri()
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+		self.statys = 'Мертв'
+		if self.para~=nil then
+--			iup.Message('root','Разрыв пары '..self.name..' - '..self.para.name)
+			self.para.para = nil
+			self.para = nil
+--			iup.Message('root',self.para.name..self.para.para.name)
+		end
+		printlog(self.name..' умер.\n')
+		st_dead = st_dead + 1
+		st_alive = st_alive - 1
+	end
+end
+
+function o_mlekopit:zhivi()
+	self:umiraet_or_not()
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+		self:draw(canvas)
+		self:info()
+		self:poisk_pari()
+		self:go()
+		self:eda()
+		self:razmn()
+		self:param()
+		self:ydobrenie()
+		if mode == 0 then grid:setcell(self.x,self.y,grid:getcell(self.x,self.y)..' '..string.sub(self.name,1,1)..string.sub(self.name,string.len(self.name),string.len(self.name))) end
+	else
+		self:death()
+	end
+	return
+end
+
+function o_mlekopit:go()
+	if (self.statys ~= 'Мертв') and (self.statys ~= 'Разложился') then
+
+		if self.statys == 'Прогулка' and self.para then
+			self.statys = 'Поиск пары'
+		end
+
+
+		-- уже можно делать ШАг ?
+		if (self.d_go <= 1) then -- ДА, можно
+		-- поиск еды
+			if (self.statys == 'Хочу есть') then
+				--x1,y1 =
+				self:poisk_edi()
+
+				if self.edagertva ~= nil then
+					-- мы нашли жертву! и идем к ней
+
+--					iup.Message("root",'Координаты жертвы: '.. self.edagertva.x .. "," .. self.edagertva.y)
+					if self.x < self.edagertva.x then
+						self.sx = 1
+					elseif self.x > self.edagertva.x then
+						self.sx = -1
+					else
+						self.sx = 0
+					end
+					if self.y < self.edagertva.y then
+						self.sy = 1
+					elseif self.y > self.edagertva.y then
+						self.sy = -1
+					else
+						self.sy = 0
+					end
+				else
+					-- Вдруг мы не нашли жертву в радиусе видимости вообще!
+					self.statys = 'Прогулка'
+					-- он сделает шаг по инерции в ту сторону куда шагал
+				end
+
+				-- не вышли ли за край поля
+				if (self.x + self.sx < 1) or (self.x + self.sx > g_h) then self.sx = 0 end
+				if (self.y + self.sy < 1) or (self.y + self.sy > g_w) then self.sy = 0 end
+				-- делаем шаг
+				self.x = self.x + self.sx
+				self.y = self.y + self.sy
+				self.d_go = self.zaderzhka_v_go -- шаг сделан, надо обновить кол-во циклов до след ШАГА
+			-- поиск пары
+			elseif (self.statys == 'Поиск пары') then
+				if self.x < x1 then
+					self.sx = 1
+				elseif self.x > x1 then
+					self.sx = -1
+				else
+					self.sx = 0
+				end
+				if self.y < y1 then
+					self.sy = 1
+				elseif self.y > y1 then
+					self.sy = -1
+				else
+					self.sy = 0
+				end
+
+				if self.x + self.sx < 1 or self.x + self.sx > g_h then self.sx = 0 end
+				if self.y + self.sy < 1 or self.y + self.sy > g_w then self.sy = 0 end
+
+				self.x = self.x + self.sx
+				self.y = self.y + self.sy
+				self.d_go = self.zaderzhka_v_go -- шаг сделан, надо обновить кол-во циклов до след ШАГА
+
+
+
+
+			elseif (self.statys == 'Прогулка') then
+				if math.random(100)<50 then
+					local sx = math.random(-1,1)
+					local sy = math.random(-1,1)
+
+					self.sx = sx
+					self.sy = sy
+				end
+				if self.x + self.sx < 1 or self.x + self.sx > g_h then self.sx = 0 end
+				if self.y + self.sy < 1 or self.y + self.sy > g_w then self.sy = 0 end
+
+				self.x = self.x + self.sx
+				self.y = self.y + self.sy
+				self.d_go = self.zaderzhka_v_go -- шаг сделан, надо обновить кол-во циклов до след ШАГА
+				if (self.sitost <= 50) then self.statys = 'Хочу есть' end
+			end
+		else -- НЕТ, нельзя еще шагать
+
+			self.d_go = self.d_go - 1
+
+			if (self.sitost > 50) and (self.statys ~= 'Поиск пары') then
+				self.statys = 'Прогулка'
+			end
+
+			if (self.sitost <= 50) then
+				self.statys = 'Хочу есть'
+			end
+
+		end
+		--[[if (self.statys~='Поиск пары') and (self.statys~='Хочу есть') then
+			if (self.vozrast > (self.max_vozrast/2)) and (self.razmnvoz == false) then
+				self.statys = 'Поиск пары'
+--					iup.Message('Ищу пару',self.name..' ищет пару!')
+			end
+		end]]
+
+	end
+end
+
+function o_mlekopit:ydobrenie()
+	if self.d_videl == 0 then
+		gumus[self.x][self.y] = gumus[self.x][self.y] + self.othodi
+		d_videl = cikl_videl
+	end
+end
+
+-- Нарисуй
+function o_mlekopit:draw(canvas)
+	if mode == 1 then
+		canvas:Foreground(cd.EncodeColor(self.c1,self.c2,self.c3))
+		canvas:Line(self.x*10-5,self.y*10-5, self.x*10+5,self.y*10+5)
+	end
+end
+------------------/Функции млекопитающих-------------------

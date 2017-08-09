@@ -1,0 +1,4 @@
+	o_sornyachok_n = 0
+	o_romashka_n = 0
+	o_cherv_n = 0
+	o_odyvanchik_n = 0
